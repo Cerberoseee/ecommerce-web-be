@@ -186,16 +186,16 @@ export interface DateFilter {
 }
 
 export class BaseEntry {
-  @ApiProperty({ type: 'uuid', description: 'record id', example: 'string' })
+  @ApiProperty({ type: 'string', description: 'record id', example: 'string' })
   id: string;
 
-  @ApiProperty({ type: 'uuid', description: 'record id', example: 'string' })
+  @ApiProperty({ type: 'string', description: 'record id', example: 'string' })
   created_at: Date;
 
-  @ApiProperty({ type: 'uuid', description: 'record id', example: 'string' })
+  @ApiProperty({ type: 'string', description: 'record id', example: 'string' })
   updated_at: Date;
 
-  @ApiProperty({ type: 'uuid', description: 'record id', example: 'string' })
+  @ApiProperty({ type: 'string', description: 'record id', example: 'string' })
   deleted_at: Date;
 }
 
