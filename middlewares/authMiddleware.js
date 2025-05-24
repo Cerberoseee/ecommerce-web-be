@@ -3,12 +3,10 @@ const User = require('../models/userModel');
 const protect = async (req, res, next) => {
     let token;
 
-    // Lấy token từ header Authorization
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
     }
 
-    // Nếu không tìm thấy token
     if (!token) {
         return res.status(401).json({
             code: 401,
@@ -19,13 +17,8 @@ const protect = async (req, res, next) => {
     }
 
     try {
-        // Giải mã token để lấy user ID
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Tìm người dùng từ cơ sở dữ liệu, bỏ qua trường password
         req.user = await User.findById(decoded.id).select('-password');
-
-        // Nếu không tìm thấy user trong database
         if (!req.user) {
             return res.status(401).json({
                 code: 401,

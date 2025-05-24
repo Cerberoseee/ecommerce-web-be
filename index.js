@@ -12,6 +12,8 @@ const customerRoutes = require("./routes/customerRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const marketingTrendsRoutes = require("./routes/marketingTrendsRoutes");
+const approvalRoutes = require("./routes/approvalRoutes");
+
 const { scheduleTrendsUpdate } = require("./services/marketingTrendsService");
 
 const cookieParser = require("cookie-parser");
@@ -19,7 +21,6 @@ const cookieParser = require("cookie-parser");
 const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
-// Kết nối MongoDB
 connectDB();
 
 const app = express();
@@ -31,21 +32,12 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
-// app.use(
-//   cors(
-//     {
-//       origin: [`http://localhost:3000`, `http://localhost:3001`],
-//     }
-//     // origin: "*",
-//   )
-// );
 app.use(
   cors({
     origin: [`http://localhost:3000`, `http://localhost:3001`],
     credentials: true,
   })
 );
-// Cấu hình Swagger
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: "3.0.0",
@@ -79,34 +71,26 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJSDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Middleware xác thực
 app.use("/api/auth", authRoutes);
 
-// Xử lý các tác vụ của admin
 app.use("/api/admin", adminRoutes);
 
-// Xử lý các tác vụ của employee
 app.use("/api/employee", employeeRoutes);
 
-// Xử lý các tác vụ của product
 app.use("/api/products", productRoutes);
 
-// Xử lý các tác vụ của category (for testing)
 app.use("/api/categories", categoryRoutes);
 
-// Xử lý các tác vụ của customer
 app.use("/api/customers", customerRoutes);
 
-// Xử lý các tác vụ của order
 app.use("/api/orders", orderRoutes);
 
-// Xử lý các tác vụ của repot
 app.use("/api/reports/", reportRoutes);
 
-// Marketing trends routes
 app.use("/api/marketing-trends", marketingTrendsRoutes);
 
-// Middleware xử lý lỗi
+app.use("/api/approval", approvalRoutes);
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({

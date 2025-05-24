@@ -472,7 +472,7 @@ const getOrderHistory = async (req, res, next) => {
         }
         
         // Build the query for orders containing this product
-        let query = { 'items.productId': mongoose.Types.ObjectId(productId) };
+        let query = { 'items.productId': new mongoose.Types.ObjectId(productId) };
         
         // Apply time period filter if specified
         if (timePeriod) {
@@ -498,7 +498,7 @@ const getOrderHistory = async (req, res, next) => {
         
         // Fetch order items containing this product
         const orderItems = await OrderItem.find({ 
-            productId: mongoose.Types.ObjectId(productId) 
+            productId: new mongoose.Types.ObjectId(productId) 
         })
         .populate({
             path: 'orderId',

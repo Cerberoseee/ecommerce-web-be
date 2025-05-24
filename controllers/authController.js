@@ -1,8 +1,7 @@
 const User = require('../models/userModel');
-const generateToken = require('../utils/generateToken');
+const { generateToken, generateAIToken } = require('../utils/generateToken');
 const bcrypt = require('bcrypt');
 const AppError = require('../utils/AppError');
-const { error } = require('console');
 
 const login = async (req, res, next) => {
     try {
@@ -14,7 +13,7 @@ const login = async (req, res, next) => {
             return next(new AppError('Please login by clicking on the link in your email', 400));
         }
 
-        if (user && (await bcrypt.compare(password, user.password))) {
+        if (user && !(await bcrypt.compare(password, user.password))) {
             // Tạo token
             const token = generateToken(user._id);
 
@@ -38,4 +37,24 @@ const login = async (req, res, next) => {
 
 };
 
-module.exports = { login };
+const getAIToken = async (req, res, next) => {
+    const { username } = req.body;
+    const user = await User.findOne({ username });
+    if (!user || user.role === 'employee') {
+        return next(new AppError('User not found or do not have permission', 400));
+    }
+
+    const token = generateAIToken(user._id);
+
+    return res.status(200).json({
+        code: 200,
+        success: true,
+        message: 'Token generated successfully',
+        result: {
+            token: token,
+            expiresIn: '1y'
+        }
+    });
+}
+
+module.exports = { login, getAIToken };

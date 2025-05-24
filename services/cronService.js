@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const productPerformanceService = require('./productPerformanceService');
+const productPerformanceJob = require('./jobs/productPerformance');
 
 class CronService {
     constructor() {
@@ -7,11 +7,11 @@ class CronService {
         this.performanceCheckJob = cron.schedule('0 0 * * *', async () => {
             console.log('Running daily product performance check...');
             try {
-                const underperformingProducts = await productPerformanceService.checkProductPerformance();
+                const underperformingProducts = await productPerformanceJob.checkProductPerformance();
                 
                 for (const productData of underperformingProducts) {
                     try {
-                        await productPerformanceService.notifyAIAgent(productData);
+                        await productPerformanceJob.notifyAIAgent(productData);
                         console.log(`Notified AI agent about underperforming product: ${productData.productId}`);
                     } catch (error) {
                         console.error(`Failed to process underperforming product ${productData.productId}:`, error);
