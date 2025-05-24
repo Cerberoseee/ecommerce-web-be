@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema({
     image: { type: [String], default: [] },
     stockQuantity: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
+    metadata: { type: Object, default: {} },
 }, { timestamps: true });
 
 function generateBarcode() {
@@ -35,6 +36,7 @@ productSchema.set('toJSON', {
             isActive: ret.isActive,
             createdAt: moment(ret.createdAt).format('DD/MM/YYYY HH:mm:ss'),
             updatedAt: moment(ret.updatedAt).format('DD/MM/YYYY HH:mm:ss'),
+            metadata: ret.metadata,
         };
 
         delete ret._id;

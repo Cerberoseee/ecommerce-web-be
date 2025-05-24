@@ -24,6 +24,7 @@ const orderHistoryKeyGenerator = (req) => `order_history_${req.query.productId}_
 const router = express.Router();
 
 router.get('/', protect, checkPasswordReset, checkLocked, cacheMiddleware(ordersKeyGenerator), getOrders);
+router.get('/history', protect, cacheMiddleware(orderHistoryKeyGenerator), getOrderHistory);
 router.get('/details/:orderId', protect, checkPasswordReset, checkLocked, cacheMiddleware(orderByIdKeyGenerator), getOrderDetail);
 router.post('/', protect, checkPasswordReset, checkLocked, createOrder);
 router.post('/add-product/:orderId', protect, checkPasswordReset, checkLocked, addProductToOrder);
@@ -31,7 +32,6 @@ router.post('/remove-product/:orderId', protect, checkPasswordReset, checkLocked
 router.patch('/:orderId', protect, checkPasswordReset, checkLocked, updateOrder);
 router.delete('/:orderId', protect, checkPasswordReset, checkLocked, deleteOrder);
 router.post('/checkout/:orderId', protect, checkPasswordReset, checkLocked, checkoutOrder);
-router.get('/history', protect, checkPasswordReset, checkLocked, cacheMiddleware(orderHistoryKeyGenerator), getOrderHistory);
 
 module.exports = router;
 

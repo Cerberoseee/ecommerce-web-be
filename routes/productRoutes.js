@@ -10,7 +10,9 @@ const { getProducts,
     deleteProductByBarcode,
     updateProductPrice,
     adjustInventoryLevels,
-    updateProductDescription } = require('../controllers/productController');
+    triggerPerformanceCheck,
+    updateProductDescription
+} = require('../controllers/productController');
 const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware'); // Middleware bảo vệ
 const { isAdmin } = require('../middlewares/roleMiddleware');
 const router = express.Router();
@@ -28,6 +30,8 @@ const productItemsKeyGenerator = (req) => `product_items_${req.params.productId}
 const productItemsByBarcodeKeyGenerator = (req) => `product_items_barcode_${req.params.barcode}`;
 
 router.get('/', protect, checkPasswordReset, checkLocked, getProducts);
+
+router.get('/trigger-performance-check', triggerPerformanceCheck);
 
 router.get('/:productId', protect, checkPasswordReset, checkLocked, cacheMiddleware(productByIdKeyGenerator), getProductById);
 
@@ -50,6 +54,7 @@ router.delete('/barcode/:barcode', protect, isAdmin, deleteProductByBarcode);
 router.put('/price', protect, isAdmin, updateProductPrice);
 
 router.post('/inventory/adjust', protect, isAdmin, adjustInventoryLevels);
+
 
 router.put('/description', protect, isAdmin, updateProductDescription);
 
@@ -923,6 +928,14 @@ router.put('/description', protect, isAdmin, updateProductDescription);
  *         description: Không tìm thấy sản phẩm
  *       500:
  *         description: Lỗi khi xóa sản phẩm
+ */
+
+/**
+ * @swagger
+ * /api/products/trigger-performance-check:
+ *   get:
+ *     summary: Trigger performance check
+ *     tags: [Products]
  */
 
 module.exports = router;

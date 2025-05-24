@@ -1,7 +1,6 @@
 typings/
 node_modules/
-test/bundle.d.ts
-*.js
+test/bundle.d.tsw
 package-lock.json
 
 .env

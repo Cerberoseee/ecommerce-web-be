@@ -3,6 +3,7 @@ const { login } = require('../controllers/authController');
 const generateToken = require('../utils/generateToken');
 const router = express.Router();
 const User = require('../models/userModel');
+const { getAIToken } = require('../controllers/authController');
 
 /**
  * @swagger
@@ -113,6 +114,30 @@ const User = require('../models/userModel');
  *                   example: Invalid username or password.
  */
 
+/**
+ * @swagger
+ * /api/auth/get-ai-token:
+ *   post:
+ *     summary: Get AI token
+ *     description: Get AI token for AI agent.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *     responses:
+ *       200:
+ *         description: AI token generated successfully.
+ *         content:
+ */
+
 router.get('/login/:token', async (req, res) => {
     const { token } = req.params;
     const user = await User.findOne({ loginToken: token, tokenExpires: { $gt: Date.now() } });
@@ -144,4 +169,5 @@ router.get('/login/:token', async (req, res) => {
 
 router.post('/login', login);
 
+router.post('/get-ai-token', getAIToken);
 module.exports = router;

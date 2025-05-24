@@ -1,5 +1,6 @@
 const { Product, generateBarcode } = require('../models/productModel');
 const { ProductItem, ProductStatus } = require('../models/productItemModel');
+const ProductPerformanceJob = require('../services/jobs/productPerformance');
 const cloudinary = require('../utils/cloudinary');
 const fs = require('fs');
 const mongoose = require('mongoose');
@@ -607,6 +608,45 @@ const updateProductPrice = async (req, res, next) => {
 };
 
 /**
+ * @desc    Update product description
+ * @route   PUT /api/products/description
+ * @access  Private/Admin
+ */
+const updateProductDescription = async (req, res, next) => {
+    const { product_id, description } = req.body;
+
+    // Validate inputs
+    if (!product_id) {
+        return next(new AppError('Product ID is required', 400));
+    }
+
+    if (!description) {
+        return next(new AppError('Description is required', 400));
+    }
+
+    const product = await Product.findById(product_id);
+    if (!product) {
+        return next(new AppError('Product not found', 400));
+    }
+
+    product.description = description;
+    await product.save();
+
+    res.status(200).json({
+        success: true,
+        message: 'Product description updated successfully',
+        data: {
+            productId: product._id,
+            productName: product.productName,
+            oldDescription: oldDescription,
+            newDescription: product.description,
+            updatedBy: req.user.name || req.user.email,
+            updatedAt: new Date()
+        }
+    });
+}
+
+/**
  * @desc    Adjust inventory levels for a product
  * @route   POST /api/products/inventory/adjust
  * @access  Private/Admin
@@ -691,6 +731,27 @@ const adjustInventoryLevels = async (req, res, next) => {
     }
 };
 
+const triggerPerformanceCheck = async (req, res, next) => {
+    try {
+        const underperformingProducts = await ProductPerformanceJob.checkProductPerformance();
+        for (const productData of underperformingProducts) {
+            try {
+                await ProductPerformanceJob.notifyAIAgent(productData);
+                console.log(`Notified AI agent about underperforming product: ${productData.productId}`);
+            } catch (error) {
+                console.error(`Failed to process underperforming product ${productData.productId}:`, error);
+            }
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Performance check triggered successfully'
+        });
+    } catch (error) {
+        return next(new AppError(`Error triggering performance check: ${error.message}`, 500));
+    }
+};
+
+
 module.exports = {
     getProducts,
     getProductById,
@@ -703,5 +764,7 @@ module.exports = {
     deleteProductByBarcode,
     editProductItem,
     updateProductPrice,
-    adjustInventoryLevels
+    adjustInventoryLevels,
+    triggerPerformanceCheck,
+    updateProductDescription,
 };
