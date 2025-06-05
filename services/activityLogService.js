@@ -39,9 +39,58 @@ const insertActivityLog = async (payload, type) => {
     }
 }
 
+const getPopularProducts = async () => {
+    try {
+        const result = await client.query({
+            query: `
+                SELECT product_id, COUNT(*) as view_count 
+                FROM activity_log 
+                GROUP BY product_id 
+                ORDER BY view_count 
+                DESC LIMIT 10
+            `,
+            format: 'JSON'
+        });
+
+        if (result.data.length > 0) {
+            return result.data;
+        } else {
+            return [];
+        }
+        
+    } catch (error) {
+        console.error('Error getting most viewed products:', error);
+        return [];
+    }
+}
+
+const getMostViewedProductsByUserId = async (user_id) => {
+    try {
+        const result = await client.query({
+            query: `
+                SELECT product_id, COUNT(*) as view_count 
+                FROM activity_log 
+                WHERE user_id = ${user_id} 
+                GROUP BY product_id 
+                ORDER BY view_count 
+                DESC LIMIT 10
+            `,
+        });
+        if (result.data.length > 0) {
+            return result.data;
+        } else {
+            return [];
+        }
+    } catch (error) {
+        console.error('Error getting most viewed products by user id:', error);
+        return [];
+    }
+}
+
 ActivityLogService = {
     insertActivityLog,
-    createTable
+    createTable,
+    getPopularProducts
 }
 
 module.exports = ActivityLogService;

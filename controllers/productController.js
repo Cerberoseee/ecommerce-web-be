@@ -11,6 +11,8 @@ const OrderItem = require('../models/orderItemModel');
 const axios = require('axios');
 const ApprovalRequest = require('../models/approvalRequestModel');
 const FeatureService = require('../services/featureService');
+const ActivityLogService = require('../services/activityLogService');
+const Features = require('../models/featuresModel');
 
 const getProducts = async (req, res, next) => {
     try {
@@ -146,6 +148,66 @@ const getProducts = async (req, res, next) => {
     }
 };
 
+const getProductsByUserRefrence = async (req, res, next) => {
+    try {
+        const user_id = req?.user?.id;
+        if (!user_id) {
+            return next(new AppError('User not found', 404));
+        }
+        const userMostViewedProducts = await ActivityLogService.getMostViewedProductsByUserId(user_id);
+
+        if (userMostViewedProducts.length === 0) {
+            const popularProducts = await ActivityLogService.getPopularProducts();
+            if (popularProducts.length === 0) {
+                return getProducts(req, res, next);
+            }
+            const productIds = popularProducts.map(product => product.product_id);
+            const products = await Product.find({ _id: { $in: productIds } });
+            return res.status(200).json({
+                code: 200,
+                success: true,
+                message: 'Get products by user refrence successfully',
+                result: products
+            });
+        }
+
+        const productIds = userMostViewedProducts.map(product => product.product_id);
+        const products = await Product.find({ _id: { $in: productIds } });
+        const keywordsList = products.map(product => product.features);
+
+        const keywordsEmbeddingList = new Set();
+
+        for (const keyword of keywordsList) {
+            for (const feature of keyword) {
+                let feature_ = await Features.findOne({ name: feature });
+                if (!feature_) {
+                    continue;
+                }
+                keywordsEmbeddingList.add(feature_.embedding_vector);
+            }
+        }
+
+        const res = await axios.post(`${process.env.AI_AGENT_URL}/recommendations/get-most-relevant-keywords`, {
+            keywords_list: Array.from(keywordsEmbeddingList)
+        });
+
+        if (res.status === 200) {
+            const mostRelevantKeywords = res.data.keywords;
+            const productsByKeywords = await Product.find({ features: { $in: mostRelevantKeywords } });
+            return res.status(200).json({
+                code: 200,
+                success: true,
+                message: 'Get products by user refrence successfully',
+                result: productsByKeywords
+            });
+        } else {
+            return getProducts(req, res, next);
+        }
+    } catch (error) {
+        return next(new AppError(`Error while getting product list by user refrence: ${error.message}`, 500));
+    }
+}
+
 const getProductById = async (req, res, next) => {
     try {
         const { productId } = req.params;
@@ -157,6 +219,24 @@ const getProductById = async (req, res, next) => {
             return next(new AppError('Product not found', 404));
         }
         await product.save();
+
+        if (req.user) {
+            setImmediate(async () => {
+                try {
+                    await ActivityLogService.insertActivityLog({
+                        productId: product._id,
+                        action: 'VIEW_PRODUCT',
+                        created_at: new Date(),
+                        id: Date.now(),
+                        user_id: req.user.id,
+                        product_id: product._id
+                    });
+                } catch (error) {
+                    console.error('Error in insertActivityLog:', error);
+                }
+            });
+        }
+
         res.status(200).json({
             code: 200,
             success: true,
