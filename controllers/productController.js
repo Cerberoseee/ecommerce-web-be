@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 const AppError = require('../utils/AppError');
 const User = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
-const client = require('../config/redisClient');
 const OrderItem = require('../models/orderItemModel');
 const axios = require('axios');
 const ApprovalRequest = require('../models/approvalRequestModel');
@@ -420,10 +419,6 @@ const editProduct = async (req, res, next) => {
         }
 
         await product.save();
-        await client.del(`product_${product._id}`);
-        await client.del(`product_barcode_${product.barcode}`);
-        await client.del(`product_items_${product._id}`);
-        await client.del(`product_items_barcode_${product.barcode}`);
 
         res.status(200).json({
             code: 200,
@@ -456,10 +451,6 @@ const deleteProductById = async (req, res, next) => {
         }
         await ProductItem.deleteMany({ productId });
         await product.deleteOne();
-        await client.del(`product_${product._id}`);
-        await client.del(`product_barcode_${product.barcode}`);
-        await client.del(`product_items_${product._id}`);
-        await client.del(`product_items_barcode_${product.barcode}`);
 
         res.status(200).json({
             code: 200,
@@ -492,10 +483,6 @@ const deleteProductByBarcode = async (req, res, next) => {
 
         await ProductItem.deleteMany({ productId: product._id });
         await product.deleteOne();
-        await client.del(`product_${product._id}`);
-        await client.del(`product_barcode_${product.barcode}`);
-        await client.del(`product_items_${product._id}`);
-        await client.del(`product_items_barcode_${product.barcode}`);
 
         res.status(200).json({
             code: 200,
@@ -529,10 +516,6 @@ const deleteProductItemByProductItemId = async (req, res, next) => {
         deletedProductItem = await productItem.deleteOne();
         product.stockQuantity -= 1;
         await product.save();
-        await client.del(`product_${product._id}`);
-        await client.del(`product_barcode_${product.barcode}`);
-        await client.del(`product_items_${product._id}`);
-        await client.del(`product_items_barcode_${product.barcode}`);
         res.status(200).json({
             code: 200,
             success: true,
@@ -626,11 +609,6 @@ const updateProductPrice = async (req, res, next) => {
         
         // Save the product
         await product.save();
-        
-        // Clear cache for this product
-        if (client) {
-            await client.del(`product_${product_id}`);
-        }
         
         res.status(200).json({
             success: true,
@@ -748,11 +726,6 @@ const adjustInventoryLevels = async (req, res, next) => {
         
         // Save the product
         await product.save();
-        
-        // Clear cache for this product
-        if (client) {
-            await client.del(`product_${product_id}`);
-        }
         
         res.status(200).json({
             success: true,

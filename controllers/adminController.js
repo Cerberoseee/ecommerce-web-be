@@ -1,7 +1,6 @@
 const User = require("../models/userModel");
 const AppError = require("../utils/AppError");
 const crypto = require("crypto");
-const client = require("../config/redisClient");
 const { Order } = require("../models/orderModel");
 const sendEmail = require("../utils/sendEmail");
 
@@ -55,7 +54,6 @@ const createEmployee = async (req, res, next) => {
       emailData.text,
       emailData.htmlContent
     );
-    await client.del(`employees_list`);
 
     res.status(201).json({
       code: 201,
@@ -101,9 +99,6 @@ const toggleEmployeeLock = async (req, res, next) => {
 
     user.isLocked = !user.isLocked;
     await user.save();
-
-    await client.del(`employees_list`);
-    await client.del(`employee_profile_${user._id}`);
 
     res.status(200).json({
       code: 200,

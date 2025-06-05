@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const cloudinary = require('../utils/cloudinary');
 const fs = require('fs');
 const AppError = require('../utils/AppError');
-const client = require('../config/redisClient');
 
 const resetPassword = async (req, res, next) => {
     try {
@@ -116,7 +115,7 @@ const uploadImage = async (req, res, next) => {
         // Update user's avatar field
         user.avatar = result.secure_url;
         await user.save();
-        await client.del(`employee_profile_${user._id}`)
+
         // Response
         res.status(200).json({
             code: 200,

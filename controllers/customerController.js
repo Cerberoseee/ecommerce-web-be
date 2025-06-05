@@ -1,7 +1,6 @@
 const Customer = require('../models/customerModel');
 const AppError = require('../utils/AppError');
 const { Order } = require('../models/orderModel');
-const client = require('../config/redisClient');
 
 const getAllCustomers = async (req, res, next) => {
     try {
@@ -49,7 +48,6 @@ const createCustomer = async (req, res, next) => {
             return next(new AppError('Phone number already exists', 400));
         }
         const customer = await Customer.create({ customerName, phoneNumber, address, email });
-        client.del('customers_list');
         res.status(201).json({
             code: 201,
             success: true,
@@ -78,13 +76,8 @@ const updateCustomer = async (req, res, next) => {
         if (phoneNumberExists && phoneNumberExists._id.toString() !== customerId) {
             return next(new AppError('Phone number already exists', 400));
         }
-        client.del(`customer_${existingCustomer.phoneNumber}`);
-        client.del(`customer_orders_${existingCustomer.phoneNumber}`);
 
         const customer = await Customer.findByIdAndUpdate(customerId, { customerName, phoneNumber, address, email }, { new: true });
-
-        client.del('customers_list');
-
 
         res.status(200).json({
             code: 200,
@@ -105,9 +98,7 @@ const deleteCustomer = async (req, res, next) => {
             return next(new AppError('Customer not found', 404));
         }
         await customer.deleteOne();
-        client.del('customers_list');
-        client.del(`customer_${customer.phoneNumber}`);
-        client.del(`customer_orders_${customer.phoneNumber}`);
+
         res.status(200).json({
             code: 200,
             success: true,

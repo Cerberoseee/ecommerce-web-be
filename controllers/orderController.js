@@ -6,7 +6,6 @@ const { Product } = require('../models/productModel');
 const { ProductItem, ProductStatus } = require('../models/productItemModel');
 const Customer = require('../models/customerModel');
 const createInvoicePDF = require('../utils/createInvoicePDF');
-const client = require('../config/redisClient');
 const fs = require('fs');
 const path = require('path');
 const sendEmail = require('../utils/sendEmail');
@@ -102,19 +101,6 @@ const createOrder = async (req, res, next) => {
             invoiceUrl: '',
         });
 
-
-        // Xóa cache
-        client.del(`${employeeId}_timeline:today`);
-        client.del(`${employeeId}_timeline:last7days`);
-        client.del(`${employeeId}_timeline:thisMonth`);
-
-        client.del(`product_report:${employeeId}:timeline:today`);
-        client.del(`product_report:${employeeId}:timeline:last7days`);
-        client.del(`product_report:${employeeId}:timeline:thisMonth`);
-
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`order_${newOrder._id}`);
-
         res.status(201).json({
             code: 201,
             success: true,
@@ -194,9 +180,6 @@ const addProductToOrder = async (req, res, next) => {
         const orderItems = await OrderItem.find({ orderId });
         const products = await getProductDetailsFromOrderItems(orderItems);
 
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`order_${order._id}`);
-
         res.status(200).json({
             code: 200,
             success: true,
@@ -274,9 +257,6 @@ const removeProductFromOrder = async (req, res, next) => {
         const updatedOrderItems = await OrderItem.find({ orderId });
         const products = await getProductDetailsFromOrderItems(updatedOrderItems);
 
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`order_${order._id}`);
-
         res.status(200).json({
             code: 200,
             success: true,
@@ -300,8 +280,6 @@ const deleteOrder = async (req, res, next) => {
         }
         const customer = await Customer.findById(order.customerId);
         await order.deleteOne();
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`order_${order._id}`);
         res.status(200).json({
             code: 200,
             success: true,
@@ -346,10 +324,6 @@ const updateOrder = async (req, res, next) => {
         await customer.save();
         await order.save();
 
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`order_${order._id}`);
-        client.del('customers_list');
-        client.del(`customer_${customer.phoneNumber}`);
         res.status(200).json({
             code: 200,
             success: true,
@@ -432,9 +406,6 @@ const checkoutOrder = async (req, res, next) => {
         // Gọi hàm sendEmail để gửi email với file đính kèm
         await sendEmail(emailData.to, emailData.subject, emailData.text, emailData.htmlContent, emailData.attachmentPath);
 
-        client.del(`orders_phoneNumber_${customer.phoneNumber}`);
-        client.del(`customer_orders_${customer.phoneNumber}`);
-        client.del(`order_${order._id}`);
         res.status(200).json({
             code: 200,
             success: true,
