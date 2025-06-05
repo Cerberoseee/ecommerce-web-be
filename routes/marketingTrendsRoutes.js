@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const MarketingTrends = require('../models/marketingTrendsModel');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware');
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
 
   /**
  * @swagger
@@ -15,6 +15,12 @@ const { protect, checkPasswordReset, checkLocked } = require('../middlewares/aut
  *           type: integer
  *           default: 7
  *         description: Number of days of data to retrieve
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           default: ''
+ *         description: Category name to filter trends
  *     responses:
  *       200:
  *         description: Successfully retrieved marketing trends
@@ -26,9 +32,11 @@ router.get('/', async (req, res) => {
         const days = parseInt(req.query.days) || 7;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
+        const category = req.query.category ? req.query.category : '';
 
         const trends = await MarketingTrends.find({
-            timestamp: { $gte: startDate }
+            timestamp: { $gte: startDate },
+            name: category
         })
         .sort({ timestamp: -1 })
         .limit(100);

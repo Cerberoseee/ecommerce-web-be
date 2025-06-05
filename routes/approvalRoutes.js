@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { isAdmin } = require('../middlewares/roleMiddleware');
-const { protect } = require('../middlewares/authMiddleware');
+const { isAdmin } = require('../middlewares/role');
+const { protect } = require('../middlewares/auth');
 const { 
     getAllApprovalRequests, 
     getApprovalRequestById, 
@@ -9,6 +9,32 @@ const {
 } = require('../controllers/approvalController');
 
 /**
+ * @swagger
+ * /api/approval:
+ *   get:
+ *     summary: Get all approval requests
+ *     description: Get all approval requests
+ *     tags:
+ *       - Approval
+ *     responses:
+ *       200:
+ *         description: Approval requests fetched successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ApprovalRequest'
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 500
  * @swagger
  * /api/approval/{requestId}:
  *   put:

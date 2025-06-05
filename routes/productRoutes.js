@@ -13,33 +13,22 @@ const { getProducts,
     triggerPerformanceCheck,
     updateProductDescription
 } = require('../controllers/productController');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware'); // Middleware bảo vệ
-const { isAdmin } = require('../middlewares/roleMiddleware');
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth'); // Middleware bảo vệ
+const { isAdmin } = require('../middlewares/role');
 const router = express.Router();
 const multer = require('../middlewares/multer');
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
-
-// Key generator functions for caching
-const productsKeyGenerator = (req) => {
-    const { category, brand, minPrice, maxPrice, sort, limit, page, productName, barcode } = req.query;
-    return `products_${JSON.stringify({ category, brand, minPrice, maxPrice, sort, limit, page, productName, barcode })}`;
-};
-const productByIdKeyGenerator = (req) => `product_${req.params.productId}`;
-const productByBarcodeKeyGenerator = (req) => `product_barcode_${req.params.barcode}`;
-const productItemsKeyGenerator = (req) => `product_items_${req.params.productId}`;
-const productItemsByBarcodeKeyGenerator = (req) => `product_items_barcode_${req.params.barcode}`;
 
 router.get('/', protect, checkPasswordReset, checkLocked, getProducts);
 
 router.get('/trigger-performance-check', triggerPerformanceCheck);
 
-router.get('/:productId', protect, checkPasswordReset, checkLocked, cacheMiddleware(productByIdKeyGenerator), getProductById);
+router.get('/:productId', protect, checkPasswordReset, checkLocked, getProductById);
 
-router.get('/barcode/:barcode', protect, checkPasswordReset, checkLocked, cacheMiddleware(productByBarcodeKeyGenerator), getProductByBarcode);
+router.get('/barcode/:barcode', protect, checkPasswordReset, checkLocked, getProductByBarcode);
 
-router.get('/items/:productId', protect, checkPasswordReset, checkLocked, cacheMiddleware(productItemsKeyGenerator), getProductItems);
+router.get('/items/:productId', protect, checkPasswordReset, checkLocked, getProductItems);
 
-router.get('/items/barcode/:barcode', protect, checkPasswordReset, checkLocked, cacheMiddleware(productItemsByBarcodeKeyGenerator), getProductItemsByBarcode);
+router.get('/items/barcode/:barcode', protect, checkPasswordReset, checkLocked, getProductItemsByBarcode);
 
 router.post('/', protect, isAdmin, multer.array('images'), addProduct);
 

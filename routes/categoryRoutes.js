@@ -1,13 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware');
-const { getAllCategories } = require('../controllers/categoryController');
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
+const { getAllCategories, addCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
 
-// Key generator functions for caching
-const categoriesKeyGenerator = (req) => 'categories_list';
-
-router.get('/', protect, checkPasswordReset, checkLocked, cacheMiddleware(categoriesKeyGenerator), getAllCategories);
+router.get('/', protect, checkPasswordReset, checkLocked, getAllCategories);
 
 module.exports = router;
 

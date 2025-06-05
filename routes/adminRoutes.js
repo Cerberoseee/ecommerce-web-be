@@ -9,22 +9,17 @@ const {
 const {
   protect,
   checkPasswordReset,
-} = require("../middlewares/authMiddleware"); // Middleware bảo vệ
-const { isAdmin } = require("../middlewares/roleMiddleware"); // Middleware kiểm tra vai trò
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
+} = require("../middlewares/auth"); // Middleware bảo vệ
+const { isAdmin } = require("../middlewares/role"); // Middleware kiểm tra vai trò
 
 
 const router = express.Router();
 
-// Key generator functions for caching
-const employeesKeyGenerator = (req) => 'employees_list';
-const profileKeyGenerator = (req) => `employee_profile_${req.params.employeeId}`;
-
 router.post('/create-employee', protect, isAdmin, createEmployee);
-router.get('/employees', protect, isAdmin, cacheMiddleware(employeesKeyGenerator), getEmployees);
+router.get('/employees', protect, isAdmin, getEmployees);
 router.patch('/employees/:id/lock', protect, isAdmin, toggleEmployeeLock);
 router.post('/employees/:email/resend-login-email', protect, isAdmin, resendLoginEmail);
-router.get('/profile/:employeeId', protect, isAdmin, cacheMiddleware(profileKeyGenerator), getProfile);
+router.get('/profile/:employeeId', protect, isAdmin, getProfile);
 /**
  * @swagger
  * /api/admin/create-employee:

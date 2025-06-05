@@ -1,38 +1,12 @@
 const express = require('express');
 const { getSalesReport, getProductReport } = require('../controllers/reportController');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware'); // Middleware bảo vệ
-const { isAdmin } = require('../middlewares/roleMiddleware');
-
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
-
-// Key generator functions for caching
-const salesReportKeyGenerator = (req) => {
-    const { startDate, endDate } = req.body;
-    const { timeline } = req.query;
-    const userId = req.user.id;
-    const keyParts = [userId];
-
-    if (startDate && endDate) {
-        keyParts.push(`start:${startDate}`, `end:${endDate}`);
-    } else if (timeline) {
-        keyParts.push(`timeline:${timeline}`);
-    }
-
-    return keyParts.join('_');
-};
-
-const productReportKeyGenerator = (req) => {
-    const { startDate, endDate } = req.body;
-    const timeline = req.query.timeline || '';
-
-    return `product_report:${req.user.id}:${startDate || ''}:${endDate || ''}:${timeline}`;
-};
-
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth'); // Middleware bảo vệ
+const { isAdmin } = require('../middlewares/role');
 
 const router = express.Router();
 
-router.post('/sales', protect, checkPasswordReset, checkLocked, cacheMiddleware(salesReportKeyGenerator), getSalesReport);
-router.post('/products', protect, checkPasswordReset, checkLocked, cacheMiddleware(productReportKeyGenerator), getProductReport);
+router.post('/sales', protect, checkPasswordReset, checkLocked, getSalesReport);
+router.post('/products', protect, checkPasswordReset, checkLocked, getProductReport);
 
 module.exports = router;
 /**

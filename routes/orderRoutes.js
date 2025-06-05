@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware');
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
 const {
     createOrder,
     getOrderDetail,
@@ -11,21 +11,14 @@ const {
     checkoutOrder,
     getOrderHistory
 } = require('../controllers/orderController');
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
-
-// Key generator functions for caching
-const ordersKeyGenerator = (req) => {
-    const { phoneNumber } = req.query;
-    return `orders_phoneNumber_${phoneNumber || 'none'}`;
-};
-const orderByIdKeyGenerator = (req) => `order_${req.params.orderId}`;
-const orderHistoryKeyGenerator = (req) => `order_history_${req.query.productId}_${req.query.timePeriod || 'all'}_${req.query.limit || '20'}`;
+const { body, validationResult } = require("express-validator");
+const AppError = require("../utils/AppError");
 
 const router = express.Router();
 
-router.get('/', protect, checkPasswordReset, checkLocked, cacheMiddleware(ordersKeyGenerator), getOrders);
-router.get('/history', protect, cacheMiddleware(orderHistoryKeyGenerator), getOrderHistory);
-router.get('/details/:orderId', protect, checkPasswordReset, checkLocked, cacheMiddleware(orderByIdKeyGenerator), getOrderDetail);
+router.get('/', protect, checkPasswordReset, checkLocked, getOrders);
+router.get('/history', protect, getOrderHistory);
+router.get('/details/:orderId', protect, checkPasswordReset, checkLocked, getOrderDetail);
 router.post('/', protect, checkPasswordReset, checkLocked, createOrder);
 router.post('/add-product/:orderId', protect, checkPasswordReset, checkLocked, addProductToOrder);
 router.post('/remove-product/:orderId', protect, checkPasswordReset, checkLocked, removeProductFromOrder);

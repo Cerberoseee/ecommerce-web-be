@@ -1,11 +1,7 @@
 const express = require('express');
 const { resetPassword, getProfile, uploadImage, changePassword } = require('../controllers/employeeController');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware'); // Middleware bảo vệ
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth'); // Middleware bảo vệ
 const { body, validationResult } = require('express-validator');
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
-
-// Key generator functions for caching
-const profileKeyGenerator = (req) => `employee_profile_${req.user.id}`;
 
 const router = express.Router();
 const multer = require('../middlewares/multer');
@@ -56,7 +52,7 @@ router.post(
     }
 );
 
-router.get('/profile', protect, checkPasswordReset, checkLocked, cacheMiddleware(profileKeyGenerator), getProfile);
+router.get('/profile', protect, checkPasswordReset, checkLocked, getProfile);
 
 router.post('/upload-avatar', protect, checkPasswordReset, checkLocked, multer.single('avatar'), uploadImage);
 

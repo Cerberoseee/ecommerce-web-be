@@ -1,19 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { getAllCustomers, getCustomersByPhoneNumber, createCustomer, updateCustomer, deleteCustomer, getOrderHistoryByPhoneNumber } = require('../controllers/customerController');
-const { protect, checkPasswordReset, checkLocked } = require('../middlewares/authMiddleware');
-const cacheMiddleware = require('../middlewares/cacheMiddleware');
+const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
 const { check, validationResult } = require('express-validator');
 const AppError = require('../utils/AppError');
 
-// Key generator functions for caching
-const customersKeyGenerator = (req) => 'customers_list';
-const customerByPhoneKeyGenerator = (req) => `customer_${req.params.phoneNumber}`;
-const customerOrdersByPhoneKeyGenerator = (req) => `customer_orders_${req.params.phoneNumber}`;
-
-router.get('/', protect, checkPasswordReset, checkLocked, cacheMiddleware(customersKeyGenerator), getAllCustomers);
-router.get('/:phoneNumber', protect, checkPasswordReset, checkLocked, cacheMiddleware(customerByPhoneKeyGenerator), getCustomersByPhoneNumber);
-router.get('/history/:phoneNumber', protect, checkPasswordReset, checkLocked, cacheMiddleware(customerOrdersByPhoneKeyGenerator), getOrderHistoryByPhoneNumber);
+router.get('/', protect, checkPasswordReset, checkLocked, getAllCustomers);
+router.get('/:phoneNumber', protect, checkPasswordReset, checkLocked, getCustomersByPhoneNumber);
+router.get('/history/:phoneNumber', protect, checkPasswordReset, checkLocked, getOrderHistoryByPhoneNumber);
 router.post(
     '/',
     protect,

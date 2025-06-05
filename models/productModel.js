@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema({
     stockQuantity: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
     metadata: { type: Object, default: {} },
+    features: { type: [String], default: [] },
 }, { timestamps: true });
 
 function generateBarcode() {
@@ -37,6 +38,7 @@ productSchema.set('toJSON', {
             createdAt: moment(ret.createdAt).format('DD/MM/YYYY HH:mm:ss'),
             updatedAt: moment(ret.updatedAt).format('DD/MM/YYYY HH:mm:ss'),
             metadata: ret.metadata,
+            features: ret.features,
         };
 
         delete ret._id;

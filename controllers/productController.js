@@ -9,6 +9,9 @@ const User = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const client = require('../config/redisClient');
 const OrderItem = require('../models/orderItemModel');
+const axios = require('axios');
+const ApprovalRequest = require('../models/approvalRequestModel');
+const FeatureService = require('../services/featureService');
 
 const getProducts = async (req, res, next) => {
     try {
@@ -305,6 +308,47 @@ const addProduct = async (req, res, next) => {
             status: 'IN_STOCK'
         }));
 
+        // Create features in background
+        setImmediate(async () => {
+            try {
+                const features = await FeatureService.createFeature({
+                    productId: newProduct._id,
+                    name: productName,
+                    description,
+                    manufacturer
+                });
+                await Product.updateOne({ _id: newProduct._id }, { $set: { features: features } });
+            } catch (error) {
+                console.error('Error in createFeature:', error);
+            }
+        });
+
+        // Run analyzeProductPerformance in background
+        setImmediate(async () => {
+            try {
+                const result = await axios.post(`${process.env.AI_AGENT_URL}/products/analyze-performance`, {
+                    productId: newProduct._id,
+                    performanceChange: 0,
+                    productDetails: newProduct
+                });
+                if (result.status === 200) {
+                    const responseData = result.data;
+                    const analysisData = await ApprovalRequest.create({
+                        productId: newProduct._id,
+                        performanceChange: 0,
+                        analysisResult: responseData.analysis,
+                        suggestedAdjustments: responseData.suggested_adjustments,
+                        status: 'pending',
+                    });
+                    console.log(`Created approval request for product ${newProduct._id} with analysis ID ${analysisData._id}`);
+                } else {
+                    console.error(`AI agent returned non-200 status: ${result.status}`);
+                }
+            } catch (error) {
+                console.error('Error in analyzeProductPerformance:', error);
+            }
+        });
+        
         await ProductItem.insertMany(productItems);
         res.status(201).json({
             code: 201,
