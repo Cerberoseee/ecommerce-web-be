@@ -1,6 +1,6 @@
 const clickhouse = require('clickhouse');
 
-const client = new clickhouse({
+const client = new clickhouse.ClickHouse({
     url: process.env.CLICKHOUSE_URL,
     port: process.env.CLICKHOUSE_PORT,
     username: process.env.CLICKHOUSE_USERNAME,
