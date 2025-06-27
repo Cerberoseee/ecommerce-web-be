@@ -13,6 +13,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const marketingTrendsRoutes = require("./routes/marketingTrendsRoutes");
 const approvalRoutes = require("./routes/approvalRoutes");
+const recommendRoutes = require('./routes/recommendRoutes');
 
 const { scheduleTrendsUpdate } = require("./services/marketingTrendsService");
 
@@ -90,6 +91,8 @@ app.use("/api/reports/", reportRoutes);
 app.use("/api/marketing-trends", marketingTrendsRoutes);
 
 app.use("/api/approval", approvalRoutes);
+
+app.use('/api/recommendations', recommendRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
