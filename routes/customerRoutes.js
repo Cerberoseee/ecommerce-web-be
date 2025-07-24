@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getAllCustomers, getCustomersByPhoneNumber, createCustomer, updateCustomer, deleteCustomer, getOrderHistoryByPhoneNumber } = require('../controllers/customerController');
+const { getAllCustomers, getCustomersByPhoneNumber, createCustomer, updateCustomer, deleteCustomer, getOrderHistoryByPhoneNumber, getCustomerById } = require('../controllers/customerController');
 const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
 const { check, validationResult } = require('express-validator');
 const AppError = require('../utils/AppError');
 
 router.get('/', protect, checkPasswordReset, checkLocked, getAllCustomers);
+router.get('/id/:customerId', protect, checkPasswordReset, checkLocked, getCustomerById);
 router.get('/:phoneNumber', protect, checkPasswordReset, checkLocked, getCustomersByPhoneNumber);
 router.get('/history/:phoneNumber', protect, checkPasswordReset, checkLocked, getOrderHistoryByPhoneNumber);
 router.post(
@@ -80,6 +81,46 @@ module.exports = router;
  *     parameters:
  *       - in: path
  *         name: phoneNumber
+ *         required: true
+ *         description: The phone number of the customer to retrieve.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Customer retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 customerId:
+ *                   type: string
+ *                 customerName:
+ *                   type: string
+ *                 phoneNumber:
+ *                   type: string
+ *                 address:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Error retrieving customer
+ */
+
+/**
+ * @swagger
+ * /api/customers/id/{customerId}:
+ *   get:
+ *     summary: Retrieve a customer by id
+ *     description: Retrieve a specific customer using their id.
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: customerId
  *         required: true
  *         description: The phone number of the customer to retrieve.
  *         schema:

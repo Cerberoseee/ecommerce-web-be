@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
         const days = parseInt(req.query.days) || 7;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
-        const category = req.query.category ? req.query.category : '';
+        const category = req.query.category ? req.query.category : undefined;
 
         const trends = await MarketingTrends.find({
             timestamp: { $gte: startDate },

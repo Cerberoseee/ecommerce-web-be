@@ -10,7 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 const OrderItem = require('../models/orderItemModel');
 const axios = require('axios');
 const ApprovalRequest = require('../models/approvalRequestModel');
-const FeatureService = require('../services/featureService');
+const Customer = require('../models/customerModel');
 
 const getProducts = async (req, res, next) => {
     try {
@@ -310,15 +310,19 @@ const addProduct = async (req, res, next) => {
         // Create features in background
         setImmediate(async () => {
             try {
-                const features = await FeatureService.createFeature({
-                    productId: newProduct._id,
-                    name: productName,
-                    description,
-                    manufacturer
+                const result = await axios.post(`${process.env.AI_AGENT_URL}/recommendations/add-product-to-vector-db`, {
+                    name: newProduct.productName,
+                    description: newProduct.description,
+                    product_id: newProduct._id,
                 });
-                await Product.updateOne({ _id: newProduct._id }, { $set: { features: features } });
+                if (result.status === 200) {
+                    const responseData = result.data;
+                    console.log(`Created approval request for product ${newProduct._id} with analysis ID ${responseData._id}`);
+                } else {
+                    console.error(`AI agent returned non-200 status: ${result.status}`);
+                }
             } catch (error) {
-                console.error('Error in createFeature:', error);
+                console.error('Error in analyzeProductPerformance:', error);
             }
         });
 
@@ -768,6 +772,34 @@ const triggerPerformanceCheck = async (req, res, next) => {
     }
 };
 
+const getRelevantProducts = async (req, res, next) => {
+    try {
+        const { customer_id } = req.params;
+        const customer = await Customer.findById(customer_id);
+        if (!customer) {
+            return next(new AppError('Customer not found', 404));
+        }
+        const AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
+        const response = await axios.post(`${AI_AGENT_URL}/recommendations/get-relevant-products`, {
+            user_profile: customer.profile,
+        });
+        if (response.status === 200) {
+            const product_ids = response.data.map(item => item.product_id);
+            const products = await Product.find({ _id: { $in: product_ids } });
+            return res.status(200).json({
+                code: 200,
+                success: true,
+                message: 'Get relevant products successfully',
+                result: products
+            });
+        } else {
+            return next(new AppError('Failed to get relevant products', 500));
+        }
+    } catch (error) {
+        return next(new AppError(`Error while getting relevant products: ${error.message}`, 500));
+    }
+}
+
 
 module.exports = {
     getProducts,
@@ -784,4 +816,5 @@ module.exports = {
     adjustInventoryLevels,
     triggerPerformanceCheck,
     updateProductDescription,
+    getRelevantProducts
 };

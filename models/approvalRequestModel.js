@@ -4,15 +4,20 @@ const approvalRequestSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
-        required: true
+        required: false
+    },
+    orderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order',
+        required: false
     },
     performanceChange: {
         type: Number,
-        required: true
+        required: false
     },
     analysisResult: {
         type: String,
-        required: true
+        required: false
     },
     suggestedAdjustments: {
         type: Array,

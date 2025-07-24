@@ -6,6 +6,7 @@ const customerSchema = new mongoose.Schema({
     phoneNumber: { type: String, required: true, unique: true },
     address: { type: String, default: '' },
     email: { type: String, default: '' },
+    profile: { type: String, default: '' },
 }, { timestamps: true });
 
 customerSchema.set('toJSON', {
@@ -16,6 +17,7 @@ customerSchema.set('toJSON', {
             phoneNumber: ret.phoneNumber,
             address: ret.address,
             email: ret.email,
+            profile: ret.profile,
             createdAt: moment(ret.createdAt).format('DD/MM/YYYY HH:mm:ss'),
             updatedAt: moment(ret.updatedAt).format('DD/MM/YYYY HH:mm:ss')
         }

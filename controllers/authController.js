@@ -13,7 +13,7 @@ const login = async (req, res, next) => {
             return next(new AppError('Please login by clicking on the link in your email', 400));
         }
 
-        if (user && !(await bcrypt.compare(password, user.password))) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             // Tạo token
             const token = generateToken(user._id);
 

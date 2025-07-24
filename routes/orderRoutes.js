@@ -9,19 +9,21 @@ const {
     updateOrder,
     deleteOrder,
     checkoutOrder,
-    getOrderHistory
+    getOrderHistory,
+    getShippingRate,
+    sendOrderConfirmation
 } = require('../controllers/orderController');
-const { body, validationResult } = require("express-validator");
-const AppError = require("../utils/AppError");
 
 const router = express.Router();
 
 router.get('/', protect, checkPasswordReset, checkLocked, getOrders);
 router.get('/history', protect, getOrderHistory);
 router.get('/details/:orderId', protect, checkPasswordReset, checkLocked, getOrderDetail);
+router.get('/shipping-rates', protect, getShippingRate);
 router.post('/', protect, checkPasswordReset, checkLocked, createOrder);
 router.post('/add-product/:orderId', protect, checkPasswordReset, checkLocked, addProductToOrder);
 router.post('/remove-product/:orderId', protect, checkPasswordReset, checkLocked, removeProductFromOrder);
+router.post('/send-order-confirmation/:orderId', protect, sendOrderConfirmation);
 router.patch('/:orderId', protect, checkPasswordReset, checkLocked, updateOrder);
 router.delete('/:orderId', protect, checkPasswordReset, checkLocked, deleteOrder);
 router.post('/checkout/:orderId', protect, checkPasswordReset, checkLocked, checkoutOrder);

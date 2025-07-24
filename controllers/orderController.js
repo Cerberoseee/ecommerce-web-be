@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const sendEmail = require('../utils/sendEmail');
 const mongoose = require('mongoose');
+const { default: axios } = require('axios');
+const ApprovalRequest = require('../models/approvalRequestModel');
 
 const getOrders = async (req, res, next) => {
     const { phoneNumber } = req.query;
@@ -375,36 +377,64 @@ const checkoutOrder = async (req, res, next) => {
 
         const orderItems = await OrderItem.find({ orderId });
         const products = await getProductDetailsFromOrderItems(orderItems);
-        const customer = await Customer.findById(order.customerId);
+        // const customer = await Customer.findById(order.customerId);
+
+        try {
+            const AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
+            const result = await axios.post(`${AI_AGENT_URL}/order-processing/process-order`, {
+                order_id: order._id,
+                customer_id: order.customerId,
+                products,
+            });
+            if (result.status === 200) {
+                const responseData = result.data;
+                console.log(responseData.map(item => {
+                    console.log(item.suggested_adjustments)
+                }));
+                const createData = responseData.map(data => ({
+                    orderId: order._id,
+                    analysisResult: data.description,
+                    suggestedAdjustments: data.suggested_adjustments,
+                    status: 'pending',
+                }));
+                await ApprovalRequest.insertMany(createData);
+                console.log(`Created approval request for order ${order._id}`);
+            } else {
+                console.error(`AI agent returned non-200 status: ${result.status}`);
+            }
+        } catch (err) {
+            console.error(`Error while processing order through AI agent: ${err.message}`);
+        }
+        
 
         // Tạo file PDF và chờ cho đến khi hoàn tất
-        const invoiceUrl = await createInvoicePDF(order, products, customer);
+        // const invoiceUrl = await createInvoicePDF(order, products, customer);
 
-        order.status = OrderStatus.COMPLETED;
-        order.invoiceUrl = invoiceUrl;
-        if (!amountReceived && !order.amountReceived) {
-            return next(new AppError('Amount received is required', 400));
-        }
-        order.amountReceived = amountReceived;
-        if (amountReceived < order.total) {
-            return next(new AppError('Amount received is less than the total amount', 400));
-        }
-        order.changeGiven = amountReceived - order.total;
-        await order.save();
+        // order.status = OrderStatus.COMPLETED;
+        // order.invoiceUrl = invoiceUrl;
+        // if (!amountReceived && !order.amountReceived) {
+        //     return next(new AppError('Amount received is required', 400));
+        // }
+        // order.amountReceived = amountReceived;
+        // if (amountReceived < order.total) {
+        //     return next(new AppError('Amount received is less than the total amount', 400));
+        // }
+        // order.changeGiven = amountReceived - order.total;
+        // await order.save();
 
-        const pdfPath = path.resolve(invoiceUrl);
+        // const pdfPath = path.resolve(invoiceUrl);
 
-        // Cấu trúc dữ liệu email với file đính kèm
-        const emailData = {
-            to: customer.email,
-            subject: 'Your Invoice from POS',
-            text: 'Thank you for your shopping! This is your invoice.',
-            htmlContent: `<p>Thank you for your shopping! This is your invoice.</p>`,
-            attachmentPath: pdfPath
-        };
+        // // Cấu trúc dữ liệu email với file đính kèm
+        // const emailData = {
+        //     to: customer.email,
+        //     subject: 'Your Invoice from POS',
+        //     text: 'Thank you for your shopping! This is your invoice.',
+        //     htmlContent: `<p>Thank you for your shopping! This is your invoice.</p>`,
+        //     attachmentPath: pdfPath
+        // };
 
-        // Gọi hàm sendEmail để gửi email với file đính kèm
-        await sendEmail(emailData.to, emailData.subject, emailData.text, emailData.htmlContent, emailData.attachmentPath);
+        // // Gọi hàm sendEmail để gửi email với file đính kèm
+        // await sendEmail(emailData.to, emailData.subject, emailData.text, emailData.htmlContent, emailData.attachmentPath);
 
         res.status(200).json({
             code: 200,
@@ -512,6 +542,101 @@ const getOrderHistory = async (req, res, next) => {
     }
 };
 
+const getShippingRate = async (req, res, next) => {
+    try {
+        // You can add logic to vary rates based on input if desired
+        const mockRates = [
+            {
+                service: "FastExpress",
+                estimatedDays: 1,
+                rate: 50000,
+                currency: "VND",
+            },
+            {
+                service: "StandardShip",
+                estimatedDays: 3,
+                rate: 30000,
+                currency: "VND"
+            },
+            {
+                service: "EconomyDelivery",
+                estimatedDays: 5,
+                rate: 20000,
+                currency: "VND"
+            },
+            {
+                service: "SuperSaver",
+                estimatedDays: 7,
+                rate: 15000,
+                currency: "VND"
+            },
+            {
+                service: "OvernightPlus",
+                estimatedDays: 0.5,
+                rate: 80000,
+                currency: "VND"
+            }
+        ];
+
+        res.status(200).json({
+            code: 200,
+            success: true,
+            rates: mockRates,
+        });
+    } catch (error) {
+        return next(new AppError(`Error fetching shipping rates: ${error.message}`, 500));
+    }
+}
+
+const sendOrderConfirmation = async (req, res, next) => {
+    const { orderId } = req.params;
+    
+    try {
+        const order = await Order.findById(orderId);
+        const customer = await Customer.findById(order.customerId);
+        if (!order) {
+            return next(new AppError('Order not found', 404));
+        }
+        if (!customer) {
+            return next(new AppError('Customer not found', 404));
+        }
+
+        const orderItems = await OrderItem.find({ orderId });
+        const products = await getProductDetailsFromOrderItems(orderItems);
+        const invoiceUrl = await createInvoicePDF(order, products, customer);
+        
+        order.status = OrderStatus.COMPLETED;
+        order.invoiceUrl = invoiceUrl;
+        if (!amountReceived && !order.amountReceived) {
+            return next(new AppError('Amount received is required', 400));
+        }
+        order.amountReceived = amountReceived;
+        if (amountReceived < order.total) {
+            return next(new AppError('Amount received is less than the total amount', 400));
+        }
+        order.changeGiven = amountReceived - order.total;
+        await order.save();
+
+        const pdfPath = path.resolve(invoiceUrl);
+
+        // Cấu trúc dữ liệu email với file đính kèm
+        const emailData = {
+            to: customer.email,
+            subject: 'Your Confirmation from Shop',
+            text: 'Thank you for your shopping! This is your order confirmation.',
+            htmlContent: `<p>Thank you for your shopping! This is your order confirmation.</p>`,
+            attachmentPath: pdfPath
+        };
+
+        // Gọi hàm sendEmail để gửi email với file đính kèm
+        await sendEmail(emailData.to, emailData.subject, emailData.text, emailData.htmlContent, emailData.attachmentPath);
+
+
+    } catch (error) {
+        return next(new AppError(`Error sending order confirmation: ${error.message}`, 500));
+    }
+}
+
 module.exports = {
     createOrder,
     getOrderDetail,
@@ -521,5 +646,7 @@ module.exports = {
     deleteOrder,
     updateOrder,
     checkoutOrder,
-    getOrderHistory
+    getOrderHistory,
+    getShippingRate,
+    sendOrderConfirmation
 };

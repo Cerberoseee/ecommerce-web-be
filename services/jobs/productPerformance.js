@@ -7,7 +7,7 @@ const ApprovalRequest = require('../../models/approvalRequestModel');
 class ProductPerformanceJob {
     constructor() {
         this.AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
-        this.PERFORMANCE_CHANGE_THRESHOLD = -20;
+        this.PERFORMANCE_CHANGE_THRESHOLD = -10;
     }
 
     async calculateSalesPerformance(productId, monthsBack = 1) {

@@ -18,18 +18,6 @@ const createCategory = async (req, res, next) => {
     const { categoryName, description } = req.body;
     const category = await Category.create({ categoryName, description });
 
-    setImmediate(async () => {
-        try {
-            await axios.post(`${process.env.AI_AGENT_URL}/categories/insert-embedding`, {
-                categoryName: category.categoryName,
-                description: category.description,
-            });
-        } catch (error) {
-            console.error('Error in insert embedding:', error);
-            throw error;
-        }
-    })
-
     res.status(201).json({
         code: 201,
         success: true,

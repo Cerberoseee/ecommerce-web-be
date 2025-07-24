@@ -1,6 +1,7 @@
 const Customer = require('../models/customerModel');
 const AppError = require('../utils/AppError');
 const { Order } = require('../models/orderModel');
+const { default: axios } = require('axios');
 
 const getAllCustomers = async (req, res, next) => {
     try {
@@ -26,6 +27,27 @@ const getCustomersByPhoneNumber = async (req, res, next) => {
             return next(new AppError('Phone number is required', 400));
         }
         const customers = await Customer.find({ phoneNumber });
+        if (customers.length === 0) {
+            return next(new AppError('No customers found', 404));
+        }
+        res.status(200).json({
+            code: 200,
+            success: true,
+            message: 'Get customers successfully',
+            result: customers
+        });
+    } catch (error) {
+        return next(new AppError(`Error while getting customers: ${error.message}`, 500));
+    }
+}
+
+const getCustomerById = async (req, res, next) => {
+    try {
+        const { customerId } = req.params;
+        if (!customerId) {
+            return next(new AppError('customerId is required', 400));
+        }
+        const customers = await Customer.findById(customerId);
         if (customers.length === 0) {
             return next(new AppError('No customers found', 404));
         }
@@ -140,12 +162,41 @@ const getOrderHistoryByPhoneNumber = async (req, res, next) => {
     }
 }
 
+const buildCustomerProfile = async (req, res, next) => {
+    try {
+        const { customerId } = req.params;
+        if (!customerId) {
+            return next(new AppError('Customer ID is required!', 400));
+        }
+        const AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
+        const response = await axios.post(`${AI_AGENT_URL}/recommendations/build-user-profile`, {
+            customer_id: customerId,
+        });
+        if (response.status === 200) {
+            const customer = await Customer.findByIdAndUpdate(customerId, { profile: response.data }, { new: true });
+            return res.status(200).json({
+                code: 200,
+                success: true,
+                message: 'Customer profile built successfully',
+                result: customer
+            });
+        } else {
+            return next(new AppError('Failed to build customer profile', 500));
+        }
+
+    } catch (error) {
+        return next(new AppError(`Error while building customer profile: ${error.message}`, 500));
+    }
+}
+
 module.exports = {
     getAllCustomers,
     getCustomersByPhoneNumber,
+    getCustomerById,
     createCustomer,
     updateCustomer,
     deleteCustomer,
-    getOrderHistoryByPhoneNumber
+    getOrderHistoryByPhoneNumber,
+    buildCustomerProfile
 }
 
