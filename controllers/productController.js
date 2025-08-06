@@ -317,7 +317,7 @@ const addProduct = async (req, res, next) => {
                 });
                 if (result.status === 200) {
                     const responseData = result.data;
-                    console.log(`Created approval request for product ${newProduct._id} with analysis ID ${responseData._id}`);
+                    console.log(`Created vector embedding for product ${newProduct._id}`);
                 } else {
                     console.error(`AI agent returned non-200 status: ${result.status}`);
                 }
@@ -327,30 +327,30 @@ const addProduct = async (req, res, next) => {
         });
 
         // Run analyzeProductPerformance in background
-        setImmediate(async () => {
-            try {
-                const result = await axios.post(`${process.env.AI_AGENT_URL}/products/analyze-performance`, {
-                    productId: newProduct._id,
-                    performanceChange: 0,
-                    productDetails: newProduct
-                });
-                if (result.status === 200) {
-                    const responseData = result.data;
-                    const analysisData = await ApprovalRequest.create({
-                        productId: newProduct._id,
-                        performanceChange: 0,
-                        analysisResult: responseData.analysis,
-                        suggestedAdjustments: responseData.suggested_adjustments,
-                        status: 'pending',
-                    });
-                    console.log(`Created approval request for product ${newProduct._id} with analysis ID ${analysisData._id}`);
-                } else {
-                    console.error(`AI agent returned non-200 status: ${result.status}`);
-                }
-            } catch (error) {
-                console.error('Error in analyzeProductPerformance:', error);
-            }
-        });
+        // setImmediate(async () => {
+        //     try {
+        //         const result = await axios.post(`${process.env.AI_AGENT_URL}/products/analyze-performance`, {
+        //             productId: newProduct._id,
+        //             performanceChange: 0,
+        //             productDetails: newProduct
+        //         });
+        //         if (result.status === 200) {
+        //             const responseData = result.data;
+        //             const analysisData = await ApprovalRequest.create({
+        //                 productId: newProduct._id,
+        //                 performanceChange: 0,
+        //                 analysisResult: responseData.analysis,
+        //                 suggestedAdjustments: responseData.suggested_adjustments,
+        //                 status: 'pending',
+        //             });
+        //             console.log(`Created approval request for product ${newProduct._id} with analysis ID ${analysisData._id}`);
+        //         } else {
+        //             console.error(`AI agent returned non-200 status: ${result.status}`);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error in analyzeProductPerformance:', error);
+        //     }
+        // });
         
         await ProductItem.insertMany(productItems);
         res.status(201).json({

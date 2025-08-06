@@ -4,9 +4,16 @@ const { getAllCustomers, getCustomersByPhoneNumber, createCustomer, updateCustom
 const { protect, checkPasswordReset, checkLocked } = require('../middlewares/auth');
 const { check, validationResult } = require('express-validator');
 const AppError = require('../utils/AppError');
+const { mockedCustomerActivityData, mockedCustomerOrderHistoryData } = require('./mockedData');
 
 router.get('/', protect, checkPasswordReset, checkLocked, getAllCustomers);
 router.get('/id/:customerId', protect, checkPasswordReset, checkLocked, getCustomerById);
+router.get('/activity-log/:customerId', (req, res) => {
+    return res.status(200).json(mockedCustomerActivityData.filter(activity => activity.customer_id === req.params.customerId));
+})
+router.get('/order-history/:customerId', (req, res) => {
+    return res.status(200).json(mockedCustomerOrderHistoryData.filter(order => order.customer_id === req.params.customerId));
+})
 router.get('/:phoneNumber', protect, checkPasswordReset, checkLocked, getCustomersByPhoneNumber);
 router.get('/history/:phoneNumber', protect, checkPasswordReset, checkLocked, getOrderHistoryByPhoneNumber);
 router.post(
@@ -32,7 +39,6 @@ router.post(
 );
 router.patch('/:customerId', protect, checkPasswordReset, checkLocked, updateCustomer);
 router.delete('/:customerId', protect, checkPasswordReset, checkLocked, deleteCustomer);
-
 
 module.exports = router;
 
@@ -147,6 +153,58 @@ module.exports = router;
  *         description: Customer not found
  *       500:
  *         description: Error retrieving customer
+ */
+
+/**
+ * @swagger
+ * /api/customers/activity-log/{customerId}:
+ *   get:
+ *     summary: Get activity log for a customer
+ *     description: Retrieve the activity log for a specific customer.
+ *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         description: The id of the customer to retrieve.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Activity log retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ */
+
+/**
+ * @swagger
+ * /api/customers/order-history/{customerId}:
+ *   get:
+ *     summary: Get order history for a customer
+ *     description: Retrieve the order history for a specific customer.
+ *     tags: [Customers]
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         description: The id of the customer to retrieve.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
  */
 
 /**
