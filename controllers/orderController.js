@@ -17,23 +17,17 @@ const getOrders = async (req, res, next) => {
     const { phoneNumber } = req.query;
     try {
         let orders;
-        if (!phoneNumber) {
-            return next(new AppError('Phone number is required', 400));
-        }
+
         if (phoneNumber) {
             const customer = await Customer.findOne({ phoneNumber });
-            //console.log(customer); //Debug
-
             if (!customer) {
                 return next(new AppError('Customer not found', 404));
             }
-
             orders = await Order.find({ customerId: customer._id });
+        } else {
+            orders = await Order.find();
         }
 
-        if (!phoneNumber) {
-            return next(new AppError('Phone number is required', 400));
-        }
         if (!orders || orders.length === 0) {
             return next(new AppError('No orders found', 404));
         }
@@ -363,7 +357,6 @@ const getProductDetailsFromOrderItems = async (orderItems) => {
 
 const checkoutOrder = async (req, res, next) => {
     const { orderId } = req.params;
-    const { amountReceived } = req.body;
 
     try {
         const order = await Order.findById(orderId);
@@ -377,7 +370,6 @@ const checkoutOrder = async (req, res, next) => {
 
         const orderItems = await OrderItem.find({ orderId });
         const products = await getProductDetailsFromOrderItems(orderItems);
-        // const customer = await Customer.findById(order.customerId);
 
         try {
             const AI_AGENT_URL = process.env.AI_AGENT_URL || 'http://localhost:8000';
@@ -405,36 +397,6 @@ const checkoutOrder = async (req, res, next) => {
         } catch (err) {
             console.error(`Error while processing order through AI agent: ${err.message}`);
         }
-        
-
-        // Tạo file PDF và chờ cho đến khi hoàn tất
-        // const invoiceUrl = await createInvoicePDF(order, products, customer);
-
-        // order.status = OrderStatus.COMPLETED;
-        // order.invoiceUrl = invoiceUrl;
-        // if (!amountReceived && !order.amountReceived) {
-        //     return next(new AppError('Amount received is required', 400));
-        // }
-        // order.amountReceived = amountReceived;
-        // if (amountReceived < order.total) {
-        //     return next(new AppError('Amount received is less than the total amount', 400));
-        // }
-        // order.changeGiven = amountReceived - order.total;
-        // await order.save();
-
-        // const pdfPath = path.resolve(invoiceUrl);
-
-        // // Cấu trúc dữ liệu email với file đính kèm
-        // const emailData = {
-        //     to: customer.email,
-        //     subject: 'Your Invoice from POS',
-        //     text: 'Thank you for your shopping! This is your invoice.',
-        //     htmlContent: `<p>Thank you for your shopping! This is your invoice.</p>`,
-        //     attachmentPath: pdfPath
-        // };
-
-        // // Gọi hàm sendEmail để gửi email với file đính kèm
-        // await sendEmail(emailData.to, emailData.subject, emailData.text, emailData.htmlContent, emailData.attachmentPath);
 
         res.status(200).json({
             code: 200,

@@ -14,7 +14,7 @@ const Customer = require('../models/customerModel');
 
 const getProducts = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id);
+        // const user = await User.findById(req.user.id);
 
         const { category, brand, minPrice, maxPrice, sort, limit = 10, page = 1, productName, barcode } = req.query;
 
@@ -97,35 +97,17 @@ const getProducts = async (req, res, next) => {
 
         // Phân trang
         const total = await Product.countDocuments(query);
-        if (total === 0) {
-            return next(new AppError('No products found', 404));
-        }
-        // console.log(`total ${total}`);
-        let maxPage = Math.ceil(total / Number(limit));
-        const MAX_LIMIT = 100;
-        if (page < 1 || limit < 1) {
-            return next(new AppError('Page and limit must be positive numbers', 400));
-        }
-        if (page > maxPage) {
-            return next(new AppError('Page is out of range, max page is ' + maxPage, 400));
-        }
-        if (limit > MAX_LIMIT) {
-            return next(new AppError('Limit is out of range, max limit is ' + MAX_LIMIT, 400));
-        }
+
         const skip = (Number(page) - 1) * Number(limit);
         productQuery = productQuery.skip(skip).limit(Number(limit));
 
-        // Ẩn importPrice nếu không phải admin
-        if (user.role !== 'admin') {
+        // // Ẩn importPrice nếu không phải admin
+        // if (user.role !== 'admin') {
             productQuery = productQuery.select('-importPrice');
-        }
+        // }
 
         // Thực thi query
         const products = await productQuery;
-
-        if (!products || products.length === 0) {
-            return next(new AppError('No products found', 404));
-        }
 
         res.status(200).json({
             code: 200,
@@ -327,30 +309,32 @@ const addProduct = async (req, res, next) => {
         });
 
         // Run analyzeProductPerformance in background
-        // setImmediate(async () => {
-        //     try {
-        //         const result = await axios.post(`${process.env.AI_AGENT_URL}/products/analyze-performance`, {
-        //             productId: newProduct._id,
-        //             performanceChange: 0,
-        //             productDetails: newProduct
-        //         });
-        //         if (result.status === 200) {
-        //             const responseData = result.data;
-        //             const analysisData = await ApprovalRequest.create({
-        //                 productId: newProduct._id,
-        //                 performanceChange: 0,
-        //                 analysisResult: responseData.analysis,
-        //                 suggestedAdjustments: responseData.suggested_adjustments,
-        //                 status: 'pending',
-        //             });
-        //             console.log(`Created approval request for product ${newProduct._id} with analysis ID ${analysisData._id}`);
-        //         } else {
-        //             console.error(`AI agent returned non-200 status: ${result.status}`);
-        //         }
-        //     } catch (error) {
-        //         console.error('Error in analyzeProductPerformance:', error);
-        //     }
-        // });
+        setImmediate(async () => {
+            console.log(newProduct)
+            try {
+                const result = await axios.post(`${process.env.AI_AGENT_URL}/products/analyze-performance`, {
+                    productId: newProduct._id,
+                    performanceChange: 0,
+                    productDetails: newProduct
+                });
+                if (result.status === 200) {
+                    const responseData = result.data;
+                    console.log(responseData);
+                    const analysisData = await ApprovalRequest.create({
+                        productId: newProduct._id,
+                        performanceChange: 0,
+                        analysisResult: responseData.analysis,
+                        suggestedAdjustments: responseData.suggested_adjustments,
+                        status: 'pending',
+                    });
+                    console.log(`Created approval request for product ${newProduct._id} with analysis ID ${analysisData._id}`);
+                } else {
+                    console.error(`AI agent returned non-200 status: ${result.status}`);
+                }
+            } catch (error) {
+                console.error('Error in analyzeProductPerformance:', error);
+            }
+        });
         
         await ProductItem.insertMany(productItems);
         res.status(201).json({

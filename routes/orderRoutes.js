@@ -26,7 +26,7 @@ router.post('/remove-product/:orderId', protect, checkPasswordReset, checkLocked
 router.post('/send-order-confirmation/:orderId', protect, sendOrderConfirmation);
 router.patch('/:orderId', protect, checkPasswordReset, checkLocked, updateOrder);
 router.delete('/:orderId', protect, checkPasswordReset, checkLocked, deleteOrder);
-router.post('/checkout/:orderId', protect, checkPasswordReset, checkLocked, checkoutOrder);
+router.post('/checkout/:orderId', checkoutOrder);
 
 module.exports = router;
 

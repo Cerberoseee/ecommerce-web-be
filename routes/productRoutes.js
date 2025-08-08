@@ -18,7 +18,7 @@ const { isAdmin } = require('../middlewares/role');
 const router = express.Router();
 const multer = require('../middlewares/multer');
 
-router.get('/', protect, checkPasswordReset, checkLocked, getProducts);
+router.get('/', getProducts);
 
 router.get('/trigger-performance-check', triggerPerformanceCheck);
 
